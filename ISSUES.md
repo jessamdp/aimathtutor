@@ -152,7 +152,7 @@ Use ULIDs for IDs rather than auto-incrementing integers.
 
 Refactor services and entities so that services no longer include database queries, maintaining separation of concerns between layers. Additionally:
 
-- **Standardize repository patterns.** `LessonRepository` directly injects `EntityManager` and does NOT extend `AbstractRepository`, while `UserRepository`, `ExerciseRepository`, and `CommentRepository` do extend it. Make all repositories follow the same pattern consistently. When fixing, check all repositories for identical inconsistencies.
+- **Standardize repository patterns.** `LessonRepository` directly injects `EntityManager` and does NOT extend `AbstractRepository`, while `UserRepository`, `ExerciseRepository`, and `CommentRepository` do extend it. Make all repositories follow the same pattern consistently, i.e. extend `AbstractRepository`. When fixing, check all repositories for identical inconsistencies.
 - **Remove database queries from entity classes.** `CommentEntity` contains static finder methods (`findByExerciseId`, `findByUserId`, etc.) that duplicate repository functionality and are unused dead code. Remove them.
 
 ### 4.8 Error Handling & Reliability
