@@ -2,126 +2,73 @@
 applyTo: '**'
 ---
 
-# AIMathTutor Project Coding & Architecture Guide
+# AIMathTutor — Agent Guide
 
-## Overview
+## Build & Development
 
-AIMathTutor is a monolithic full-stack web application built with **Quarkus** (backend) and **Vaadin** (frontend). It provides interactive math exercises, AI-powered tutoring, and analytics for students and teachers. The project tightly integrates backend and frontend using CDI (`@Inject`), with no REST API boundary between core services and views.
+- **Primary interface:** `make` commands, not raw Maven. See `Makefile` or run `make help`.
+- **Java 25 is required.** `make check` enforces this; CI uses Temurin JDK 25.
+- **Maven wrapper:** `./mvnw` (scripts fall back to system `mvn` if available).
+- **Dev mode:** `make dev` → `./mvnw quarkus:dev` on port `9001`. Dev UI: `http://localhost:9001/q/dev/`.
+- **Tests:** `make test` → `./mvnw test`. Uses `@QuarkusTest`, Mockito, Panache Mock.
+- **Install (skip tests):** `make install` → `./mvnw clean install -DskipTests`.
+- **Production build:** Must pass `-Pproduction` to trigger Vaadin `prepare-frontend` + `build-frontend`. CI build command: `./mvnw clean install package -DskipTests -Pproduction`.
+- **JVM args required:** `--add-opens java.base/java.lang=ALL-UNNAMED` and `-XX:+EnableDynamicAgentLoading` (configured in `quarkus-maven-plugin`).
+- **Versioning:** Controlled by Maven property `${revision}` (default `1.0.0-SNAPSHOT`). Pass `-Drevision=X.Y.Z` when needed.
 
-## Key Features
+## Architecture
 
-- **Graspable Math Workspace:** Embedded for symbolic manipulation and step-by-step math actions.
-- **AI Tutor Layer:** Real-time feedback, hints, and adaptive problem generation using multiple AI providers (Gemini, OpenAI, Ollama, mock).
-- **Lesson & Exercise Management:** Author, organize, and track progress on math problems and lessons.
-- **Comment System:** Threaded comments for exercises, moderation, and reporting.
-- **User Management:** Roles (Admin, Teacher, Student), groups, ranks, and permissions.
-- **Analytics:** Session/event tracking, progress summaries, and teacher/admin dashboards.
+- **Monolithic Quarkus + Vaadin.** No REST boundary between frontend views and backend services.
+- **Vaadin views inject services via CDI (`@Inject`).** REST clients are **only** for external AI APIs.
+- **Main packages:** `entity/` (Panache), `repository/` (Panache), `service/` (`@ApplicationScoped`), `view/` (Vaadin), `dto/`, `security/`.
 
-## Project Structure
+## Code Quality Gates
 
-- **Backend & Frontend:**
-  - Vaadin views directly inject backend services (CDI, `@Inject`).
-  - No REST API for core app logic; REST only for external AI APIs.
-- **Graspable Math Integration:**
-  - Embedded via Vaadin `Html`/`IFrame` components and JavaScript API.
-  - Student actions captured by JS listeners, sent to Java via `@ClientCallable`.
-- **AI Tutor Integration:**
-  - `AITutorService` orchestrates feedback, hints, and problem generation.
-  - Supports Gemini, OpenAI, Ollama, and mock providers (configurable via `application.properties`).
-  - AI feedback is returned as `AIFeedbackDto` and displayed in chat-style panels.
-- **Entities, DTOs, Services, Views:**
-  - For each resource, maintain:
-    - **DTOs:** Data transfer objects (e.g., `GraspableEventDto`, `AIFeedbackDto`, `CommentDto`).
-    - **Entities:** Hibernate/Panache entities for DB access (e.g., `StudentSessionEntity`, `AiInteractionEntity`, `CommentEntity`).
-    - **Services:** Business logic (`@ApplicationScoped`), e.g., `AITutorService`, `GraspableMathService`, `CommentService`, `AnalyticsService`.
-    - **Views:** Vaadin UI components (e.g., `MathWorkspaceView`, `ExerciseWorkspaceView`, `LessonsView`).
+All are enforced in CI (`build` job); run locally before pushing:
 
-## AI Providers
+| Gate | Command | Notes |
+|------|---------|-------|
+| Tests | `make test` | |
+| SpotBugs | `./mvnw spotbugs:check` | Fails build; exclusions in `spotbugs-exclude.xml` |
+| Checkstyle | `./mvnw checkstyle:check` | Google Java Style; config in `checkstyle.xml` |
+| OWASP dep-check | `./mvnw org.owasp:dependency-check-maven:check` | Requires `NVD_API_KEY` env var; `failBuildOnCVSS=7` |
+| License report | `./mvnw license:add-third-party` | Runs at `verify` phase |
 
-- **Gemini (Google):**
-  - Configure via `gemini.api.key`, `gemini.model`, etc.
-  - See `GeminiService.java` and DTOs for integration.
-- **OpenAI:**
-  - Configure via `openai.api.key`, `openai.model`, etc.
-  - See `OpenAiService.java` and DTOs for integration.
-- **Ollama (local LLM):**
-  - Configure via `ollama.api.url`, `ollama.model`, etc.
-  - See `OllamaService.java` and DTOs for integration.
-- **Mock Provider:**
-  - For development/testing, set `ai.tutor.provider=mock` or disable with `ai.tutor.enabled=false`.
+- **CI order:** `test` → `security` (CodeQL) → `build` (package + SpotBugs + Checkstyle).
 
-## Graspable Math + AI Integration Logic
+## Database
 
-1. **Student Action:** Performed in Graspable Math workspace (move, simplify, expand, etc.).
-2. **Event Capture:** JavaScript listener calls Java method via `@ClientCallable`.
-3. **DTO Conversion:** Event data mapped to `GraspableEventDto`.
-4. **AI Analysis:** View calls `AITutorService.analyzeMathAction(eventDto)`.
-5. **AI Feedback:** Service constructs prompt, queries AI, returns `AIFeedbackDto`.
-6. **UI Update:** Feedback displayed in chat panel (`AIChatPanel`) beside workspace.
-7. **Session/Event Logging:** Actions and feedback logged for analytics.
+- **PostgreSQL.** Dev/test uses Quarkus devservices (`postgres:18.3-alpine3.23` image on port `55432`).
+- **Schema strategy:**
+  - **Dev/Test:** `drop-and-create`, loads `src/main/resources/sql/import.sql`.
+  - **Production:** `validate`, expects schema already present; production seed is `sql/init.sql`.
+- **Test accounts (dev/test seed):** `admin`/`admin`, `teacher`/`teacher`, `student1`/`student1`, `student2`/`student2`.
+- **Password utility:** `make password` generates salt+hash for `init.sql` inserts.
 
-## User Management & Permissions
+## AI Configuration
 
-- **Entities:** `UserEntity`, `UserGroupEntity`, `UserRankEntity`.
-- **Roles:** Admin, Teacher, Student (see `user_ranks` table in `init.sql`).
-- **Groups & Ranks:** Used for differentiated access, progress tracking, and permissions.
-- **Authentication:** Managed by `AuthService`, with password hashing and session management.
+- **API keys (env vars, immutable):** `GEMINI_API_KEY`, `OPENAI_API_KEY`, `OPENAI_ORG_ID`.
+- **Runtime settings (DB-backed, mutable):** Model, temperature, max tokens, prompts, etc. configured via **Admin Settings UI** at `/admin/config`.
+- **Mock provider:** Set `ai.tutor.provider=mock` or `ai.tutor.enabled=false` for testing without external APIs.
+- **Test profile overrides:** Disables `@Retry` delays on `AiTutorService` Ollama calls and sets 1-second timeouts to fail fast.
 
-## Comments & Moderation
+## Changelog
 
-- **CommentEntity:** Stores threaded comments on exercises.
-- **CommentService:** Handles creation, editing, deletion, flagging, and moderation.
-- **CommentsPanel:** Vaadin component for displaying and managing comments.
-- **Moderation:** Rate limiting, flagging, auto-hide, and admin/teacher controls.
+- Maintain per-version files in `changelog/` (e.g., `changelog/2.2.5.md`).
+- Keep an `Unreleased.md` section; move items to a new version file at release time.
+- Follow [Keep a Changelog](https://keepachangelog.com) format. Do **not** mention class/method names—describe user-facing changes only.
 
-## Analytics & Progress Tracking
+## Docker
 
-- **StudentSessionEntity:** Tracks sessions per user/exercise.
-- **AiInteractionEntity:** Logs AI feedback and interactions.
-- **AnalyticsService:** Provides summaries, progress reports, and admin dashboards.
+- **Production:** `docker-compose.yml` in repo root (app + PostgreSQL; optional pgadmin/Ollama).
+- **Dockerfiles:** `src/main/docker/Dockerfile.alpine` and `Dockerfile.ubuntu` (port 9001, healthcheck on `/q/health/ready`).
+- **Build script:** `scripts/sh/build.sh` (used by `make build`) handles multi-platform `docker buildx` with QEMU fallback.
 
-## Testing Standards
+## Key Files
 
-- **Unit & Integration Tests:**
-  - Mock AI endpoints for deterministic tests.
-  - Test Graspable Math event handling and feedback logic.
-  - Use test DTOs/entities mirroring main code structure.
-- **Run tests after changes:**
-  - `./mvnw clean install package -DskipTests && ./mvnw test`
-
-## Development Workflow
-
-1. Make changes following these instructions and project coding standards.
-2. Add clear comments and Javadoc where necessary.
-3. Reference existing code for consistency and avoid duplication.
-4. Run tests and fix compilation/test failures before committing.
-5. Use seeded test accounts (see `init.sql`) for local testing.
-
-## Configuration & Environment
-
-- **Main config:** `src/main/resources/application.properties`
-- **Database:** PostgreSQL (default), see `init.sql` for schema and seed data.
-- **Logging:** Configured for file and console output; see comments in `application.properties`.
-- **Docker:** Use `docker-compose.yml` for production deployment.
-
-## Documentation
-
-- [Quickstart](docs/QUICKSTART.md)
-- [Build Guide](docs/BUILD_GUIDE.md)
-- [README.md](README.md)
-
-## Changelog Standards
-
-**Changelog Directory:** All changelogs are maintained in the `changelog/` directory, with a separate `.md` file for each released version (e.g., `changelog/1.0.0.md`, `changelog/1.1.0.md`).
-
-**Format:** Each changelog file follows [Semantic Versioning 2.0.0](https://www.semver.org) and [Keep a Changelog 1.1.0](https://www.keepachangelog.com).
-
-**Content:**
-
-- Each entry describes changes from an end user's perspective (features, fixes, removals, breaking changes, etc.).
-- Do **not** mention class, method, or file names—focus on what changed for users, not implementation details.
-- Document all changes introduced by commits since the last tagged release in a new version file.
-- Use clear sections: Added, Changed, Deprecated, Removed, Fixed, Security, and **Unreleased**.
-- The **Unreleased** section lists upcoming changes that are not yet released, so users can see what to expect. At release time, move these changes into the new version section.
-- Update the changelog with every meaningful change before merging or tagging a release.
-- For initial releases, provide a brief explanation of the changelog and versioning approach.
+- `pom.xml` — Maven config, versions, quality plugins, profiles (`native`, `production`).
+- `src/main/resources/application.properties` — Quarkus config, AI env var wiring, Hibernate strategy.
+- `Makefile` / `scripts/sh/` — Dev commands, git helpers (`branch`, `rebase`, `tag`, `release`).
+- `.github/workflows/ci-cd.yml` — GitHub Actions pipeline.
+- `docs/QUICKSTART.md` — Setup, Docker Compose, Ollama model recommendations.
+- `docs/BUILD_GUIDE.md` — JDK/Maven requirements, packaging, Docker images.
