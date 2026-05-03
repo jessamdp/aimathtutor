@@ -2,6 +2,9 @@ package de.vptr.aimathtutor.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,6 +18,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -37,6 +41,9 @@ public class AiConfigEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
+    @Version
+    public Long version;
+
     @NotBlank
     @Column(name = "config_key", unique = true, nullable = false)
     public String configKey;
@@ -44,20 +51,24 @@ public class AiConfigEntity extends PanacheEntityBase {
     @Column(name = "config_value", columnDefinition = "TEXT")
     public String configValue;
 
-    @Column(name = "config_type")
+    @Column(name = "config_type", nullable = false)
     public String configType; // "STRING", "INTEGER", "DOUBLE", "BOOLEAN", "TEXT"
 
     @Column(name = "is_optional", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     public Boolean isOptional = false; // Whether this config can have empty/null values
 
-    @Column(name = "category")
+    @Column(name = "category", nullable = false)
     public String category; // "GENERAL", "GEMINI", "OPENAI", "OLLAMA", "PROMPTS"
 
     @Column(name = "description", columnDefinition = "TEXT")
     public String description;
 
-    @Column(name = "last_updated_at")
-    public LocalDateTime lastUpdatedAt;
+    @Generated(event = EventType.INSERT)
+    public LocalDateTime created;
+
+    @Generated(event = EventType.UPDATE)
+    @Column(name = "last_edit")
+    public LocalDateTime lastEdit;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_updated_by")
@@ -67,7 +78,6 @@ public class AiConfigEntity extends PanacheEntityBase {
      * Default constructor for Hibernate.
      */
     public AiConfigEntity() {
-        this.lastUpdatedAt = LocalDateTime.now();
     }
 
     /**
@@ -80,7 +90,6 @@ public class AiConfigEntity extends PanacheEntityBase {
         this.configType = configType;
         this.category = category;
         this.isOptional = false;
-        this.lastUpdatedAt = LocalDateTime.now();
     }
 
     /**
@@ -94,7 +103,6 @@ public class AiConfigEntity extends PanacheEntityBase {
         this.category = category;
         this.description = description;
         this.isOptional = isOptional != null ? isOptional : false;
-        this.lastUpdatedAt = LocalDateTime.now();
     }
 
     /**

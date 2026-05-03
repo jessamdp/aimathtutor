@@ -43,6 +43,7 @@ import de.vptr.aimathtutor.component.layout.SearchLayout;
 import de.vptr.aimathtutor.dto.ExerciseDto;
 import de.vptr.aimathtutor.dto.ExerciseViewDto;
 import de.vptr.aimathtutor.dto.LessonViewDto;
+import de.vptr.aimathtutor.enums.DifficultyLevel;
 import de.vptr.aimathtutor.service.ExerciseService;
 import de.vptr.aimathtutor.service.LessonService;
 import de.vptr.aimathtutor.service.UserService;
@@ -303,6 +304,10 @@ public class AdminExercisesView extends AbstractAdminView {
         if (exercise == null) {
             try {
                 final var currentUser = this.userService.getCurrentUser();
+                if (currentUser == null || currentUser.id == null) {
+                    NotificationUtil.showError("Error retrieving user information. Please try again.");
+                    return;
+                }
                 this.currentExercise.userId = currentUser.id;
                 this.currentExercise.user = new ExerciseDto.UserField();
                 this.currentExercise.user.setId(currentUser.id);
@@ -396,8 +401,8 @@ public class AdminExercisesView extends AbstractAdminView {
         graspableTargetExpressionField.setHeight("80px");
         graspableTargetExpressionField.setTooltipText("Expected solution to validate against");
 
-        final var graspableDifficultyField = new ComboBox<de.vptr.aimathtutor.enums.DifficultyLevel>("Difficulty");
-        graspableDifficultyField.setItems(de.vptr.aimathtutor.enums.DifficultyLevel.values());
+        final var graspableDifficultyField = new ComboBox<DifficultyLevel>("Difficulty");
+        graspableDifficultyField.setItems(DifficultyLevel.values());
         graspableDifficultyField.setPlaceholder("Select difficulty");
         graspableDifficultyField.setClearButtonVisible(true);
         graspableDifficultyField.setTooltipText("Problem difficulty level for AI adaptation");

@@ -28,8 +28,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.validation.ValidationException;
 import jakarta.validation.Valid;
+import jakarta.validation.ValidationException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
@@ -196,7 +196,7 @@ public class CommentService {
             comment.user = this.userRepository.findByUsernameOptional(currentUsername).orElse(null);
         }
 
-        comment.created = LocalDateTime.now();
+        comment.content = this.sanitizeCommentContent(comment.content);
         this.commentRepository.persist(comment);
         return new CommentViewDto(comment);
     }
@@ -269,12 +269,11 @@ public class CommentService {
 
         // 6. Create and persist entity
         final CommentEntity comment = new CommentEntity();
-        comment.content = dto.content.trim();
+        comment.content = this.sanitizeCommentContent(dto.content);
         comment.exercise = exercise;
         comment.user = author;
         comment.parentComment = parentComment;
         comment.sessionId = dto.sessionId;
-        comment.created = LocalDateTime.now();
         comment.status = "VISIBLE";
         comment.flagsCount = 0;
         this.commentRepository.persist(comment);
@@ -290,8 +289,22 @@ public class CommentService {
     }
 
     /**
+     * Sanitizes comment content by stripping HTML tags to prevent stored XSS.
+     *
+     * @param content raw comment content
+     * @return sanitized content with HTML tags removed
+     */
+    private String sanitizeCommentContent(final String content) {
+        if (content == null) {
+            return "";
+        }
+        return content.replaceAll("<[^>]*>", "").trim();
+    }
+
+    /**
      * Completely replaces an existing comment (PUT semantics).
      * Only content field is updated; exercise, user, and parent remain unchanged.
+     * Package-private to enforce permission checks through the public API.
      *
      * @param comment the comment entity with id and updated content
      * @return the updated {@link CommentViewDto}
@@ -299,7 +312,7 @@ public class CommentService {
      * @throws ValidationException     if content is missing or empty
      */
     @Transactional
-    public CommentViewDto updateComment(final CommentEntity comment) {
+    CommentViewDto updateComment(final CommentEntity comment) {
         final CommentEntity existingComment = this.commentRepository.findById(comment.id);
         if (existingComment == null) {
             throw new WebApplicationException("Comment not found", Response.Status.NOT_FOUND);
@@ -311,7 +324,7 @@ public class CommentService {
         }
 
         // Only update content field for PUT (since we only allow content in DTO)
-        existingComment.content = comment.content;
+        existingComment.content = this.sanitizeCommentContent(comment.content);
 
         this.commentRepository.persist(existingComment);
         return new CommentViewDto(existingComment);
@@ -321,13 +334,14 @@ public class CommentService {
      * Partially updates an existing comment (PATCH semantics).
      * Only updates comment properties that are explicitly provided in the entity;
      * null values are ignored.
+     * Package-private to enforce permission checks through the public API.
      *
      * @param comment the comment entity with id and partial fields to update
      * @return the updated {@link CommentViewDto}
      * @throws WebApplicationException if comment not found (NOT_FOUND status)
      */
     @Transactional
-    public CommentViewDto patchComment(final CommentEntity comment) {
+    CommentViewDto patchComment(final CommentEntity comment) {
         final CommentEntity existingComment = this.commentRepository.findById(comment.id);
         if (existingComment == null) {
             throw new WebApplicationException("Comment not found", Response.Status.NOT_FOUND);
@@ -335,7 +349,7 @@ public class CommentService {
 
         // Partial update (PATCH semantics) - only update provided fields
         if (comment.content != null) {
-            existingComment.content = comment.content;
+            existingComment.content = this.sanitizeCommentContent(comment.content);
         }
 
         this.commentRepository.persist(existingComment);
@@ -344,13 +358,14 @@ public class CommentService {
 
     /**
      * Deletes a comment by ID (basic overload).
+     * Package-private to enforce permission checks through the public API.
      *
      * @param id the comment ID to delete
      * @return {@code true} if deletion succeeded, {@code false} if comment not
      *         found
      */
     @Transactional
-    public boolean deleteComment(final Long id) {
+    boolean deleteComment(final Long id) {
         return this.commentRepository.deleteById(id);
     }
 
@@ -416,8 +431,7 @@ public class CommentService {
 
         // Update content
         if (dto.content != null && !dto.content.isBlank()) {
-            comment.content = dto.content.trim();
-            comment.editedAt = LocalDateTime.now();
+            comment.content = this.sanitizeCommentContent(dto.content);
             this.commentRepository.persist(comment);
             LOG.info("Comment edited successfully: commentId={}, editorId={}, isAuthor={}", commentId, editorId,
                     comment.user != null && comment.user.id.equals(editorId));
@@ -516,7 +530,7 @@ public class CommentService {
 
     /**
      * Finds comments created within a date range (inclusive).
-     * Date strings are parsed as ISO-8601 dates. Returns all comments if parsing
+     * Date strings are parsed as ISO-8601 dates. Returns an empty list if parsing
      * fails or dates are null.
      *
      * @param startDate the start date (ISO-8601 format: YYYY-MM-DD)
@@ -526,7 +540,7 @@ public class CommentService {
     @Transactional
     public List<CommentViewDto> findByDateRange(final String startDate, final String endDate) {
         if (startDate == null || endDate == null) {
-            return this.getAllComments();
+            return List.of();
         }
 
         try {
@@ -541,8 +555,8 @@ public class CommentService {
                     .map(CommentViewDto::new)
                     .collect(Collectors.toList());
         } catch (final DateTimeParseException e) {
-            // If date parsing fails, return all comments
-            return this.getAllComments();
+            LOG.warn("Invalid date range provided: startDate='{}', endDate='{}'", startDate, endDate);
+            return List.of();
         }
     }
 

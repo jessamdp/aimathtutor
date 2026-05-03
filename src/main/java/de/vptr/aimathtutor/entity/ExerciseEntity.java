@@ -3,10 +3,14 @@ package de.vptr.aimathtutor.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import de.vptr.aimathtutor.enums.DifficultyLevel;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,6 +26,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -49,10 +54,14 @@ public class ExerciseEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
+    @Version
+    public Long version;
+
     @NotBlank
+    @Column(nullable = false)
     public String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     @NotBlank
     public String content;
 
@@ -64,16 +73,20 @@ public class ExerciseEntity extends PanacheEntityBase {
     @JoinColumn(name = "lesson_id")
     public LessonEntity lesson;
 
+    @Column(nullable = false)
     public Boolean published = false;
 
+    @Column(nullable = false)
     public Boolean commentable = false;
 
+    @Generated(event = EventType.INSERT)
     public LocalDateTime created;
 
+    @Generated(event = EventType.UPDATE)
     @Column(name = "last_edit")
     public LocalDateTime lastEdit;
 
-    @OneToMany(mappedBy = "exercise")
+    @OneToMany(mappedBy = "exercise", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JsonIgnore
     public List<CommentEntity> comments;
 
