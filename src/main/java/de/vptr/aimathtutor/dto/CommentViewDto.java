@@ -36,7 +36,7 @@ public class CommentViewDto {
         this.created = entity.created;
         this.lastEdit = entity.lastEdit;
         this.status = entity.status != null ? entity.status : CommentStatus.VISIBLE;
-        this.flagsCount = entity.flagsCount != null ? entity.flagsCount : 0;
+        this.flagsCount = entity.flagsCount;
         this.sessionId = entity.sessionId;
 
         if (entity.exercise != null) {

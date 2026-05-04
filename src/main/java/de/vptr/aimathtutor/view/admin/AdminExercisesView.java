@@ -246,14 +246,14 @@ public class AdminExercisesView extends AbstractAdminView {
 
         this.grid.addComponentColumn(exercise -> {
             final var checkbox = new Checkbox();
-            checkbox.setValue(exercise.published != null ? exercise.published : false);
+            checkbox.setValue(exercise.published);
             checkbox.setReadOnly(true);
             return checkbox;
         }).setHeader("Published").setWidth("100px").setFlexGrow(0);
 
         this.grid.addComponentColumn(exercise -> {
             final var checkbox = new Checkbox();
-            checkbox.setValue(exercise.commentable != null ? exercise.commentable : false);
+            checkbox.setValue(exercise.commentable);
             checkbox.setReadOnly(true);
             return checkbox;
         }).setHeader("Commentable").setWidth("100px").setFlexGrow(0);
@@ -359,9 +359,9 @@ public class AdminExercisesView extends AbstractAdminView {
         this.binder.forField(contentField)
                 .withValidator(value -> value != null && !value.isBlank(), "Content is required")
                 .bind(exercise1 -> exercise1.content, (exercise1, value) -> exercise1.content = value);
-        this.binder.bind(publishedField, exercise1 -> exercise1.published != null ? exercise1.published : false,
+        this.binder.bind(publishedField, exercise1 -> exercise1.published,
                 (exercise1, value) -> exercise1.published = value);
-        this.binder.bind(commentableField, exercise1 -> exercise1.commentable != null ? exercise1.commentable : false,
+        this.binder.bind(commentableField, exercise1 -> exercise1.commentable,
                 (exercise1, value) -> exercise1.commentable = value);
 
         // Lesson binding - convert between LessonViewDto and lessonId

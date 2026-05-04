@@ -2,16 +2,16 @@
 
 ## Recommended Implementation Order
 
-1. **Phase 1:** Critical security issues — address these first, one by one
-2. **Phase 2:** High-priority bugs — start with UI thread safety (H2) and auth annotations (H3)
-3. **Phase 3:** Code duplication and quality — tackle M1–M6 (extraction/refactoring) as a dedicated refactoring sprint
-4. **Phase 4:** Code duplication and quality — tackle M7-M20
-5. **Phase 5:** Test coverage — focus on AI service mocks first
-6. **Phase 6:** Polish Part 2 — batch low-priority items
+1. **Phase 1:** Critical/Security Issues — address these first, one by one
+2. **Phase 2:** High-Priority Bugs & Architectural Issues — start with UI thread safety (H2) and auth annotations (H3)
+3. **Phase 3:** Moderate Code Quality & Duplication Issues, Pt. 1 — tackle M1–M6 (extraction/refactoring) as a dedicated refactoring sprint
+4. **Phase 4:** Moderate Code Quality & Duplication Issues, Pt. 2 — tackle M7-M20
+5. **Phase 5:** Test Coverage & CI — focus on AI service mocks first
+6. **Phase 6:** Low-Priority / Cosmetic — batch low-priority items
 
 ---
 
-## Phase 1: Critical Security Fixes (Immediate)
+## Phase 1: Critical/Security Issues (Immediate)
 
 | #   | Issue                                                                                        | Location                                                               | Action                                                              |
 | --- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -23,19 +23,18 @@
 
 ## Phase 2: High-Priority Bugs & Architectural Issues
 
-| #   | Issue                                                                                                | Location                                                                                                           | Action                                                                      |
-| --- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| H1  | **N+1 query in `LessonService.isDescendantOf`** — lazy-loads parent chain one-by-one                 | `LessonService.java:203-211`                                                                                       | Write recursive CTE query or use bounded eager fetch                        |
-| H2  | **`AsyncDataLoader` calls `component.getUI()` off UI thread**                                        | `AsyncDataLoader.java:65`                                                                                          | Capture `UI` reference before async call, use `ui.access()`                 |
-| H3  | **No declarative auth annotations** (`@RolesAllowed`, `@Authenticated`) on any route                 | All 16 route views                                                                                                 | Add `@Authenticated` to user views, `@RolesAllowed("admin")` to admin views |
-| H4  | **Lockout time leaked to attacker** — exact remaining seconds in error message                       | `AuthService.java:64-65`                                                                                           | Return generic "Too many failed attempts. Try again later."                 |
-| H5  | **No IP-based rate limiting** — only per-username                                                    | `LoginAttemptService.java`                                                                                         | Add IP-based throttling alongside username tracking                         |
-| H6  | **AI provider config cache has no expiry + race condition**                                          | `AiConfigService.java:38,102-121`                                                                                  | Use Caffeine cache with TTL, or `ConcurrentHashMap.computeIfAbsent`         |
-| H7  | **`VaadinSession.getCurrent()` can be null** — used directly in AdminCommentsView                    | `AdminCommentsView.java:373`                                                                                       | Replace with `authService.getUsername()`                                    |
-| H8  | **LazyInitializationException risk** in ViewDto constructors accessing `.size()` on lazy collections | `UserViewDto.java:46-47`, `ExerciseViewDto.java:57`, `UserRankViewDto.java:94`, `UserGroupViewDto.java:23`         | Use eager JPQL fetch or `@Transactional`                                    |
-| H9  | **`Integer` wrappers for DB `NOT NULL DEFAULT 0` columns** — risk of NPE                             | `StudentSessionEntity.java:99-106`, `CommentEntity.java:95`, `UserEntity.java:74-78`, `UserRankEntity.java:48-109` | Change to primitive `int`/`boolean`                                         |
+| #   | Issue                                                                                                | Location                                                                                                   | Action                                                                      |
+| --- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| H1  | **N+1 query in `LessonService.isDescendantOf`** — lazy-loads parent chain one-by-one                 | `LessonService.java:203-211`                                                                               | Write recursive CTE query or use bounded eager fetch                        |
+| H2  | **`AsyncDataLoader` calls `component.getUI()` off UI thread**                                        | `AsyncDataLoader.java:65`                                                                                  | Capture `UI` reference before async call, use `ui.access()`                 |
+| H3  | **No declarative auth annotations** (`@RolesAllowed`, `@Authenticated`) on any route                 | All 16 route views                                                                                         | Add `@Authenticated` to user views, `@RolesAllowed("admin")` to admin views |
+| H4  | **Lockout time leaked to attacker** — exact remaining seconds in error message                       | `AuthService.java:64-65`                                                                                   | Return generic "Too many failed attempts. Try again later."                 |
+| H5  | **No IP-based rate limiting** — only per-username                                                    | `LoginAttemptService.java`                                                                                 | Add IP-based throttling alongside username tracking                         |
+| H6  | **AI provider config cache has no expiry + race condition**                                          | `AiConfigService.java:38,102-121`                                                                          | Use Caffeine cache with TTL, or `ConcurrentHashMap.computeIfAbsent`         |
+| H7  | **`VaadinSession.getCurrent()` can be null** — used directly in AdminCommentsView                    | `AdminCommentsView.java:373`                                                                               | Replace with `authService.getUsername()`                                    |
+| H8  | **LazyInitializationException risk** in ViewDto constructors accessing `.size()` on lazy collections | `UserViewDto.java:46-47`, `ExerciseViewDto.java:57`, `UserRankViewDto.java:94`, `UserGroupViewDto.java:23` | Use eager JPQL fetch or `@Transactional`                                    |
 
-## Phase 3: Moderate Code Quality & Duplication Issues
+## Phases 3 & 4: Moderate Code Quality & Duplication Issues
 
 | #   | Issue                                                                                                                          | Location                                                                                                         | Action                                                                                                          |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -60,7 +59,7 @@
 | M19 | **`CommentViewDto.toCommentDto()` is lossy** — drops status, parentId, sessionId                                               | `CommentViewDto.java:60-66`                                                                                      | Either add missing fields or document the intentional lossiness                                                 |
 | M20 | **Missing NOT NULL on `CommentEntity.content` `@Column`**                                                                      | `CommentEntity.java:67`                                                                                          | Add `nullable = false` to match DB schema                                                                       |
 
-## Phase 4: Test Coverage & CI
+## Phase 5: Test Coverage & CI
 
 | #   | Issue                                                                                                                                                    | Action                                                                              |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -73,7 +72,7 @@
 | T7  | **CI security job lacks Maven cache**                                                                                                                    | Add `actions/cache@v4` to security job                                              |
 | T8  | **No `.env.example` template** in repository                                                                                                             | Create one documenting all required env vars                                        |
 
-## Phase 5: Low-Priority / Cosmetic
+## Phase 6: Low-Priority / Cosmetic
 
 | #   | Issue                                                                                      | Action                                                                    |
 | --- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |

@@ -74,10 +74,10 @@ public class ExerciseEntity extends PanacheEntityBase {
         public LessonEntity lesson;
 
         @Column(nullable = false)
-        public Boolean published = false;
+        public boolean published = false;
 
         @Column(nullable = false)
-        public Boolean commentable = false;
+        public boolean commentable = false;
 
         @Generated(event = EventType.INSERT)
         public LocalDateTime created;
