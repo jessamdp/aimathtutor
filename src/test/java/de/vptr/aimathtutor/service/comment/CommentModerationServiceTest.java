@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.entity.CommentEntity;
 import de.vptr.aimathtutor.entity.ExerciseEntity;
 import de.vptr.aimathtutor.entity.UserEntity;
@@ -72,7 +73,7 @@ class CommentModerationServiceTest {
 
         this.moderationService.moderateComment(comment.id, "HIDE", moderator.id, "Offensive content");
 
-        assertEquals("HIDDEN", comment.status);
+        assertEquals(CommentStatus.HIDDEN, comment.status);
         assertEquals("Offensive content", comment.moderationReason);
         assertEquals("HIDE", comment.moderationAction);
         assertNotNull(comment.moderatedAt);
@@ -93,7 +94,7 @@ class CommentModerationServiceTest {
 
         this.moderationService.moderateComment(comment.id, "SHOW", moderator.id, "Approved");
 
-        assertEquals("VISIBLE", comment.status);
+        assertEquals(CommentStatus.VISIBLE, comment.status);
         assertEquals(0, comment.flagsCount);
         assertNull(comment.deletedBy);
         assertNull(comment.deletedAt);
@@ -107,11 +108,11 @@ class CommentModerationServiceTest {
         final UserEntity author = this.userRepository.findById(3L);
         final ExerciseEntity exercise = this.exerciseRepository.findById(1L);
         final var comment = this.createComment(exercise, author);
-        comment.status = "DELETED";
+        comment.status = CommentStatus.DELETED;
 
         this.moderationService.moderateComment(comment.id, "RESTORE", moderator.id, "Restored");
 
-        assertEquals("VISIBLE", comment.status);
+        assertEquals(CommentStatus.VISIBLE, comment.status);
         assertEquals(0, comment.flagsCount);
         assertEquals("RESTORE", comment.moderationAction);
     }
@@ -127,7 +128,7 @@ class CommentModerationServiceTest {
 
         this.moderationService.moderateComment(comment.id, "DELETE", moderator.id, "Spam");
 
-        assertEquals("DELETED", comment.status);
+        assertEquals(CommentStatus.DELETED, comment.status);
         assertEquals("DELETE", comment.moderationAction);
         assertNotNull(comment.deletedAt);
         assertEquals(moderator.id, comment.deletedBy.id);
@@ -178,7 +179,7 @@ class CommentModerationServiceTest {
         comment.content = "Test comment";
         comment.exercise = exercise;
         comment.user = user;
-        comment.status = "VISIBLE";
+        comment.status = CommentStatus.VISIBLE;
         this.commentRepository.persist(comment);
         return comment;
     }

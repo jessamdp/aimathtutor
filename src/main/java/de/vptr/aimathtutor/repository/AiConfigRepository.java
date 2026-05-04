@@ -3,6 +3,7 @@ package de.vptr.aimathtutor.repository;
 import java.util.List;
 import java.util.Optional;
 
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigCategory;
 import de.vptr.aimathtutor.entity.AiConfigEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -48,7 +49,7 @@ public class AiConfigRepository extends AbstractRepository {
      * @return a list of {@link AiConfigEntity} objects in the category
      */
     @Transactional
-    public List<AiConfigEntity> findByCategory(final String category) {
+    public List<AiConfigEntity> findByCategory(final ConfigCategory category) {
         if (category == null) {
             return List.of();
         }

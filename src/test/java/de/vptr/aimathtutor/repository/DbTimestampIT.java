@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigCategory;
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigType;
 import de.vptr.aimathtutor.entity.AiConfigEntity;
 import de.vptr.aimathtutor.entity.AiInteractionEntity;
 import de.vptr.aimathtutor.entity.CommentEntity;
@@ -339,8 +341,8 @@ class DbTimestampIT {
         final var config = new AiConfigEntity();
         config.configKey = "test.timestamp.key";
         config.configValue = "v1";
-        config.configType = "STRING";
-        config.category = "TEST";
+        config.configType = ConfigType.STRING;
+        config.category = ConfigCategory.GENERAL;
 
         this.aiConfigRepository.persist(config);
         this.em.flush();

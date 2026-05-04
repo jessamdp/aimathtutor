@@ -2,12 +2,12 @@
 
 ## Recommended Implementation Order
 
-1. **Phase 1:** Critical security issues — do first, can be done in parallel by different developers
-2. **Phase 2:** High-priority bugs — start with H4 (UI thread safety) and H5 (auth annotations) as they affect all users
+1. **Phase 1:** Critical security issues — address these first, one by one
+2. **Phase 2:** High-priority bugs — start with UI thread safety (H2) and auth annotations (H3)
 3. **Phase 3:** Code duplication and quality — tackle M1–M6 (extraction/refactoring) as a dedicated refactoring sprint
-4. **Phase 4:** Test coverage — parallel with Phase 3, focus on AI service mocks first
-5. **Phase 5:** Polish Part 1 — batch test coverage
-6. **Phase 6:** Polish Part 2 — batch ci low-priority items
+4. **Phase 4:** Code duplication and quality — tackle M7-M20
+5. **Phase 5:** Test coverage — focus on AI service mocks first
+6. **Phase 6:** Polish Part 2 — batch low-priority items
 
 ---
 
@@ -31,10 +31,9 @@
 | H4  | **Lockout time leaked to attacker** — exact remaining seconds in error message                       | `AuthService.java:64-65`                                                                                           | Return generic "Too many failed attempts. Try again later."                 |
 | H5  | **No IP-based rate limiting** — only per-username                                                    | `LoginAttemptService.java`                                                                                         | Add IP-based throttling alongside username tracking                         |
 | H6  | **AI provider config cache has no expiry + race condition**                                          | `AiConfigService.java:38,102-121`                                                                                  | Use Caffeine cache with TTL, or `ConcurrentHashMap.computeIfAbsent`         |
-| H7  | **No delete confirmation dialogs** across all admin views                                            | AdminCommentsView, AdminUsersView, AdminUserGroupsView, AdminExercisesView, AdminUserRanksView, AdminLessonsView   | Add `ConfirmDialog` before all delete operations                            |
-| H8  | **`VaadinSession.getCurrent()` can be null** — used directly in AdminCommentsView                    | `AdminCommentsView.java:373`                                                                                       | Replace with `authService.getUsername()`                                    |
-| H9  | **LazyInitializationException risk** in ViewDto constructors accessing `.size()` on lazy collections | `UserViewDto.java:46-47`, `ExerciseViewDto.java:57`, `UserRankViewDto.java:94`, `UserGroupViewDto.java:23`         | Use eager JPQL fetch or `@Transactional`                                    |
-| H10 | **`Integer` wrappers for DB `NOT NULL DEFAULT 0` columns** — risk of NPE                             | `StudentSessionEntity.java:99-106`, `CommentEntity.java:95`, `UserEntity.java:74-78`, `UserRankEntity.java:48-109` | Change to primitive `int`/`boolean`                                         |
+| H7  | **`VaadinSession.getCurrent()` can be null** — used directly in AdminCommentsView                    | `AdminCommentsView.java:373`                                                                                       | Replace with `authService.getUsername()`                                    |
+| H8  | **LazyInitializationException risk** in ViewDto constructors accessing `.size()` on lazy collections | `UserViewDto.java:46-47`, `ExerciseViewDto.java:57`, `UserRankViewDto.java:94`, `UserGroupViewDto.java:23`         | Use eager JPQL fetch or `@Transactional`                                    |
+| H9  | **`Integer` wrappers for DB `NOT NULL DEFAULT 0` columns** — risk of NPE                             | `StudentSessionEntity.java:99-106`, `CommentEntity.java:95`, `UserEntity.java:74-78`, `UserRankEntity.java:48-109` | Change to primitive `int`/`boolean`                                         |
 
 ## Phase 3: Moderate Code Quality & Duplication Issues
 
@@ -49,6 +48,7 @@
 | M7  | **Error handling inconsistency across AI services** — different exception types, missing safety checks                         | All three AI services                                                                                            | Standardize: custom `AiProviderException` with HTTP status, add truncation/completeness checks to Gemini/Ollama |
 | M8  | **`ErrorMessageUtil` brittle manual JSON parsing**                                                                             | `ErrorMessageUtil.java:26-34`                                                                                    | Replace with Jackson `ObjectMapper`                                                                             |
 | M9  | **Sync service calls blocking UI thread** across multiple views                                                                | LessonsView, UserSettingsView, ExerciseWorkspaceView, AdminExercisesView, AdminSessionsView, AdminUserGroupsView | Wrap in `AsyncDataLoader` or `CompletableFuture.supplyAsync`                                                    |
+| M10 | **DB auth query on every navigation** — `isAuthenticated()` hits DB every `beforeEnter`                                        | `AuthService.java:154-174`                                                                                       | Cache auth result with short TTL or use session-based check                                                     |
 | M11 | **TOCTOU race in `CommentFlagRepository.createFlag`**                                                                          | `CommentFlagRepository.java:60-88`                                                                               | Use DB unique constraint + catch `ConstraintViolationException` for clean response                              |
 | M12 | **Missing `@Transactional`** on `UserService.findActiveUsers` and `LessonService.findByParentId`                               | `UserService.java:352`, `LessonService.java:70`                                                                  | Add `@Transactional`                                                                                            |
 | M13 | **Config key magic strings** throughout AdminConfigView                                                                        | `AdminConfigView.java`                                                                                           | Extract to `AiConfigKeys` constants class                                                                       |
@@ -59,7 +59,6 @@
 | M18 | **`isModelInstalled` uses fragile substring matching** on JSON response                                                        | `OllamaService.java:188-208`                                                                                     | Parse JSON and check model list properly                                                                        |
 | M19 | **`CommentViewDto.toCommentDto()` is lossy** — drops status, parentId, sessionId                                               | `CommentViewDto.java:60-66`                                                                                      | Either add missing fields or document the intentional lossiness                                                 |
 | M20 | **Missing NOT NULL on `CommentEntity.content` `@Column`**                                                                      | `CommentEntity.java:67`                                                                                          | Add `nullable = false` to match DB schema                                                                       |
-| M21 | **DB auth query on every navigation** — `isAuthenticated()` hits DB every `beforeEnter`                                        | `AuthService.java:154-174`                                                                                       | Cache auth result with short TTL or use session-based check                                                     |
 
 ## Phase 4: Test Coverage & CI
 

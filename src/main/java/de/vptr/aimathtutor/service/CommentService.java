@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.vptr.aimathtutor.dto.CommentDto;
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.dto.CommentViewDto;
 import de.vptr.aimathtutor.entity.CommentEntity;
 import de.vptr.aimathtutor.entity.ExerciseEntity;
@@ -252,7 +253,7 @@ public class CommentService {
                         dto.parentCommentId, authorId);
                 throw new WebApplicationException("Parent comment not found", Response.Status.BAD_REQUEST);
             }
-            if (!"VISIBLE".equals(parentComment.status)) {
+            if (parentComment.status != CommentStatus.VISIBLE) {
                 LOG.warn("Comment creation failed: cannot reply to hidden/deleted comment parentId={}, authorId={}",
                         dto.parentCommentId, authorId);
                 throw new WebApplicationException("Cannot reply to deleted/hidden comment",
@@ -274,7 +275,7 @@ public class CommentService {
         comment.user = author;
         comment.parentComment = parentComment;
         comment.sessionId = dto.sessionId;
-        comment.status = "VISIBLE";
+        comment.status = CommentStatus.VISIBLE;
         comment.flagsCount = 0;
         this.commentRepository.persist(comment);
 
@@ -395,7 +396,7 @@ public class CommentService {
 
         if (softDelete) {
             // Soft delete: mark as deleted but preserve data
-            comment.status = "DELETED";
+            comment.status = CommentStatus.DELETED;
             comment.deletedBy = requester;
             comment.deletedAt = LocalDateTime.now();
             this.commentRepository.persist(comment);
@@ -564,7 +565,7 @@ public class CommentService {
      * Find comments by status (VISIBLE, HIDDEN, DELETED).
      */
     @Transactional
-    public List<CommentViewDto> findByStatus(final String status) {
+    public List<CommentViewDto> findByStatus(final CommentStatus status) {
         final List<CommentEntity> comments = this.commentRepository.findByStatus(status);
         return comments.stream()
                 .map(CommentViewDto::new)

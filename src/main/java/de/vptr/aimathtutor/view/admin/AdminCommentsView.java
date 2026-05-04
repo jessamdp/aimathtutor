@@ -39,6 +39,7 @@ import de.vptr.aimathtutor.component.layout.DateFilterLayout;
 import de.vptr.aimathtutor.component.layout.IntegerFilterLayout;
 import de.vptr.aimathtutor.component.layout.SearchLayout;
 import de.vptr.aimathtutor.dto.CommentDto;
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.dto.CommentViewDto;
 import de.vptr.aimathtutor.entity.CommentEntity;
 import de.vptr.aimathtutor.entity.ExerciseEntity;
@@ -180,8 +181,9 @@ public class AdminCommentsView extends AbstractAdminView {
         // Status filter (VISIBLE, HIDDEN, DELETED)
         this.statusFilterSelect = new Select<>();
         this.statusFilterSelect.setLabel("Filter by Status");
-        this.statusFilterSelect.setItems("ALL", "VISIBLE", "HIDDEN", "DELETED");
-        this.statusFilterSelect.setValue("ALL");
+        this.statusFilterSelect.setItems(CommentStatus.VISIBLE.getValue(), CommentStatus.HIDDEN.getValue(),
+                CommentStatus.DELETED.getValue());
+        this.statusFilterSelect.setValue(CommentStatus.VISIBLE.getValue());
         this.statusFilterSelect.addValueChangeListener(ignored -> this.filterByStatus());
 
         // Flags filter (show comments with N+ flags)
@@ -250,19 +252,19 @@ public class AdminCommentsView extends AbstractAdminView {
 
         // Status column
         this.grid.addComponentColumn(comment -> {
-            final var status = comment.status != null ? comment.status : "VISIBLE";
-            final var statusSpan = new Span(status);
+            final var status = comment.status != null ? comment.status : CommentStatus.VISIBLE;
+            final var statusSpan = new Span(status.getValue());
             statusSpan.getStyle().set("font-weight", "600");
 
             // Color-code status
-            if ("VISIBLE".equals(status)) {
+            if (CommentStatus.VISIBLE.equals(status)) {
                 statusSpan.getStyle().set("color", "var(--lumo-success-color)");
-            } else if ("HIDDEN".equals(status)) {
+            } else if (CommentStatus.HIDDEN.equals(status)) {
                 statusSpan.getStyle().set("color", "var(--lumo-warning-color)");
-            } else if ("DELETED".equals(status)) {
+            } else if (CommentStatus.DELETED.equals(status)) {
                 statusSpan.getStyle().set("color", "var(--lumo-error-color)");
             }
-            statusSpan.getElement().setAttribute("aria-label", status);
+            statusSpan.getElement().setAttribute("aria-label", status.getValue());
 
             return statusSpan;
         }).setHeader("Status").setWidth("100px").setFlexGrow(0);
@@ -285,9 +287,9 @@ public class AdminCommentsView extends AbstractAdminView {
 
         // Hide/Show button (toggle moderation)
         Button moderateButton;
-        if ("VISIBLE".equals(comment.status)) {
+        if (CommentStatus.VISIBLE.equals(comment.status)) {
             moderateButton = new HideButton(ignored -> this.hideComment(comment));
-        } else if ("HIDDEN".equals(comment.status)) {
+        } else if (CommentStatus.HIDDEN.equals(comment.status)) {
             moderateButton = new ShowButton(ignored -> this.showComment(comment));
         } else {
             // DELETED - offer restore option
@@ -488,13 +490,13 @@ public class AdminCommentsView extends AbstractAdminView {
 
     private void filterByStatus() {
         final String status = this.statusFilterSelect.getValue();
-        if ("ALL".equals(status)) {
+        if (status == null) {
             this.loadCommentsAsync();
             return;
         }
 
         AsyncDataLoader.load(
-                () -> this.commentService.findByStatus(status),
+                () -> this.commentService.findByStatus(CommentStatus.fromString(status)),
                 this,
                 comments -> this.grid.setItems(comments),
                 "An error occurred while filtering comments. Please try again.");

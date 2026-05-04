@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.vptr.aimathtutor.dto.AiConfigDto;
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigCategory;
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigType;
 import de.vptr.aimathtutor.dto.AiConfigUpdateDto;
 import de.vptr.aimathtutor.dto.UserRankViewDto;
 import de.vptr.aimathtutor.entity.AiConfigEntity;
@@ -221,7 +223,7 @@ public class AiConfigService {
      * @param category the category to retrieve
      * @return a map of all config keys and values in the category
      */
-    public Map<String, String> getAllConfigsByCategory(final String category) {
+    public Map<String, String> getAllConfigsByCategory(final ConfigCategory category) {
         if (category == null) {
             return new HashMap<>();
         }
@@ -250,7 +252,7 @@ public class AiConfigService {
      * @param category the category to retrieve
      * @return a list of {@link AiConfigDto} objects in the category
      */
-    public List<AiConfigDto> getConfigsByCategory(final String category) {
+    public List<AiConfigDto> getConfigsByCategory(final ConfigCategory category) {
         return this.aiConfigRepository.findByCategory(category).stream()
                 .map(this::entityToDto)
                 .toList();
@@ -304,8 +306,8 @@ public class AiConfigService {
         final var entity = existing.orElseGet(() -> {
             final var newEntity = new AiConfigEntity();
             newEntity.configKey = configKey;
-            newEntity.configType = "STRING";
-            newEntity.category = "UNKNOWN";
+            newEntity.configType = ConfigType.STRING;
+            newEntity.category = ConfigCategory.GENERAL;
             return newEntity;
         });
 
@@ -375,8 +377,8 @@ public class AiConfigService {
             final AiConfigEntity entity = existing.orElseGet(() -> {
                 final AiConfigEntity newEntity = new AiConfigEntity();
                 newEntity.configKey = update.configKey;
-                newEntity.configType = "STRING";
-                newEntity.category = "UNKNOWN";
+                newEntity.configType = ConfigType.STRING;
+                newEntity.category = ConfigCategory.GENERAL;
                 return newEntity;
             });
 
@@ -434,8 +436,8 @@ public class AiConfigService {
         }
 
         // Type-based validation
-        switch (configType.toUpperCase()) {
-            case "INTEGER" -> {
+        switch (configType) {
+            case INTEGER -> {
                 try {
                     final int intValue = Integer.parseInt(configValue);
                     if (configKey.contains("max-tokens") && (intValue < 1 || intValue > 8192)) {
@@ -447,7 +449,7 @@ public class AiConfigService {
                             "Value must be a valid integer for key '" + configKey + "', got: " + configValue);
                 }
             }
-            case "DOUBLE" -> {
+            case DOUBLE -> {
                 try {
                     final double doubleValue = Double.parseDouble(configValue);
                     if (configKey.contains("temperature") && (doubleValue < 0.0 || doubleValue > 2.0)) {
@@ -459,7 +461,7 @@ public class AiConfigService {
                             "Value must be a valid decimal for key '" + configKey + "', got: " + configValue);
                 }
             }
-            case "BOOLEAN" -> {
+            case BOOLEAN -> {
                 @SuppressWarnings("null") // false positive
                 final var lower = configValue.toLowerCase().trim();
                 if (!("true".equals(lower) || "false".equals(lower) || "1".equals(lower) || "0".equals(lower))) {

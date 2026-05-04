@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.entity.CommentEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -350,11 +351,10 @@ public class CommentRepository extends AbstractRepository {
     /**
      * Retrieves comments with a specific status.
      *
-     * @param status the status value to filter by (e.g., "active", "hidden",
-     *               "flagged")
+     * @param status the status to filter by
      * @return a list of {@link CommentEntity} objects with the specified status
      */
-    public List<CommentEntity> findByStatus(final String status) {
+    public List<CommentEntity> findByStatus(final CommentStatus status) {
         final var q = this.em.createNamedQuery("Comment.findByStatus", CommentEntity.class);
         q.setParameter("st", status);
         return q.getResultList();

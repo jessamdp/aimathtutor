@@ -24,6 +24,7 @@ import de.vptr.aimathtutor.component.button.EditButton;
 import de.vptr.aimathtutor.component.button.ReplyButton;
 import de.vptr.aimathtutor.component.button.ReportButton;
 import de.vptr.aimathtutor.dto.CommentDto;
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.dto.CommentViewDto;
 import de.vptr.aimathtutor.event.CommentCreatedEvent;
 import de.vptr.aimathtutor.event.CommentCreatedEventBridge;
@@ -219,7 +220,7 @@ public class CommentsPanel extends VerticalLayout {
                 .set("color", "var(--lumo-contrast-70pct)");
 
         // Content with line break from header
-        final String displayContent = "DELETED".equals(comment.status) ? "[deleted]" : comment.content;
+        final String displayContent = CommentStatus.DELETED.equals(comment.status) ? "[deleted]" : comment.content;
         final Span content = new Span(displayContent != null ? displayContent : "");
         content.addClassName("comment-content");
         content.getStyle()
@@ -236,7 +237,7 @@ public class CommentsPanel extends VerticalLayout {
                 .set("margin-top", "0.75rem");
 
         // Show/hide based on status
-        if (!"DELETED".equals(comment.status)) {
+        if (!CommentStatus.DELETED.equals(comment.status)) {
             final Button replyButton = new ReplyButton(e -> this.onReplyClicked(comment.id));
             actions.add(replyButton);
 

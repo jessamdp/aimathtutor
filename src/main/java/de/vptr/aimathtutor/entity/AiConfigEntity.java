@@ -5,9 +5,13 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigCategory;
+import de.vptr.aimathtutor.dto.AiConfigDto.ConfigType;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,13 +56,15 @@ public class AiConfigEntity extends PanacheEntityBase {
     public String configValue;
 
     @Column(name = "config_type", nullable = false)
-    public String configType; // "STRING", "INTEGER", "DOUBLE", "BOOLEAN", "TEXT"
+    @Enumerated(EnumType.STRING)
+    public ConfigType configType; // "STRING", "INTEGER", "DOUBLE", "BOOLEAN", "TEXT"
 
     @Column(name = "is_optional", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     public Boolean isOptional = false; // Whether this config can have empty/null values
 
     @Column(name = "category", nullable = false)
-    public String category; // "GENERAL", "GEMINI", "OPENAI", "OLLAMA", "PROMPTS"
+    @Enumerated(EnumType.STRING)
+    public ConfigCategory category; // "GENERAL", "GEMINI", "OPENAI", "OLLAMA", "PROMPTS"
 
     @Column(name = "description", columnDefinition = "TEXT")
     public String description;
@@ -83,8 +89,8 @@ public class AiConfigEntity extends PanacheEntityBase {
     /**
      * Constructor with required fields.
      */
-    public AiConfigEntity(final String configKey, final String configValue, final String configType,
-            final String category) {
+    public AiConfigEntity(final String configKey, final String configValue, final ConfigType configType,
+            final ConfigCategory category) {
         this.configKey = configKey;
         this.configValue = configValue;
         this.configType = configType;
@@ -95,8 +101,8 @@ public class AiConfigEntity extends PanacheEntityBase {
     /**
      * Constructor with all fields including optionality.
      */
-    public AiConfigEntity(final String configKey, final String configValue, final String configType,
-            final String category, final String description, final Boolean isOptional) {
+    public AiConfigEntity(final String configKey, final String configValue, final ConfigType configType,
+            final ConfigCategory category, final String description, final Boolean isOptional) {
         this.configKey = configKey;
         this.configValue = configValue;
         this.configType = configType;
@@ -108,8 +114,8 @@ public class AiConfigEntity extends PanacheEntityBase {
     /**
      * Constructor with description but default optionality (not optional).
      */
-    public AiConfigEntity(final String configKey, final String configValue, final String configType,
-            final String category, final String description) {
+    public AiConfigEntity(final String configKey, final String configValue, final ConfigType configType,
+            final ConfigCategory category, final String description) {
         this(configKey, configValue, configType, category, description, false);
     }
 }

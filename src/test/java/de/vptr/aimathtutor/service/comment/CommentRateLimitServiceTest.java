@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import de.vptr.aimathtutor.dto.CommentDto.CommentStatus;
 import de.vptr.aimathtutor.entity.CommentEntity;
 import de.vptr.aimathtutor.entity.ExerciseEntity;
 import de.vptr.aimathtutor.entity.UserEntity;
@@ -65,7 +66,7 @@ class CommentRateLimitServiceTest {
         comment.content = "Test comment";
         comment.exercise = exercise;
         comment.user = user;
-        comment.status = "VISIBLE";
+        comment.status = CommentStatus.VISIBLE;
         this.commentRepository.persist(comment);
         this.em.flush();
 
@@ -86,7 +87,7 @@ class CommentRateLimitServiceTest {
             comment.content = "Bulk comment " + i;
             comment.exercise = exercise;
             comment.user = user;
-            comment.status = "VISIBLE";
+            comment.status = CommentStatus.VISIBLE;
             this.commentRepository.persist(comment);
         }
         this.em.flush();
