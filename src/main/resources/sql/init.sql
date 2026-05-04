@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS user_ranks CASCADE;
 -- --------------------------------------------------------
 
 --
--- Structure for table `user_ranks` (must be first - no dependencies)
+-- Structure for table `user_ranks`
 --
 
 CREATE TABLE user_ranks (
@@ -153,7 +153,7 @@ CREATE INDEX exercises_content_fts ON exercises USING gin(to_tsvector('english',
 
 -- --------------------------------------------------------
 
--- Seed exercises for lessons (graspable-enabled where appropriate)
+-- Seed exercises for lessons
 
 INSERT INTO exercises (id, title, content, user_id, lesson_id, published, commentable, graspable_enabled, graspable_initial_expression, graspable_target_expression, graspable_difficulty, graspable_hints)
 VALUES
@@ -174,7 +174,7 @@ SELECT setval('exercises_id_seq', 8, true);
 
 
 --
--- Structure for table `comments` (can now reference users and exercises)
+-- Structure for table `comments`
 --
 
 CREATE TABLE comments (
@@ -211,7 +211,7 @@ CREATE INDEX idx_comments_user_created ON comments(user_id, created);
 -- Full-text search index for content
 CREATE INDEX comments_content_fts ON comments USING gin(to_tsvector('english', content));
 
--- Table to track which users have flagged which comments (prevents duplicate flags)
+-- Table to track which users have flagged which comments
 CREATE TABLE comment_flags (
   id BIGSERIAL PRIMARY KEY,
   version BIGINT NOT NULL DEFAULT 0,
@@ -357,7 +357,7 @@ CREATE TABLE ai_config (
   config_value TEXT,
   config_type VARCHAR(50),
   is_optional BOOLEAN NOT NULL DEFAULT false,
-  category VARCHAR(50),
+  category VARCHAR(50) NOT NULL,
   description TEXT,
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_edit TIMESTAMP,
@@ -470,7 +470,7 @@ ALTER TABLE ai_interactions
 -- --------------------------------------------------------
 
 --
--- Additional indexes for foreign keys (PostgreSQL doesn't auto-index FK columns)
+-- Additional indexes for foreign keys
 --
 
 CREATE INDEX exercises_user_id_idx ON exercises (user_id);
