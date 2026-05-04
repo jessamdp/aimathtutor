@@ -81,7 +81,7 @@ public class OpenAiService {
      * @param prompt The user prompt
      * @return The generated text response
      */
-    @Retry(maxRetries = AppConstants.RETRY_MAX_RETRIES, delay = AppConstants.RETRY_DELAY_MS, jitter = AppConstants.RETRY_JITTER_MS)
+    @Retry(maxRetries = AppConstants.RETRY_MAX_RETRIES, delay = AppConstants.RETRY_DELAY_MS, jitter = AppConstants.RETRY_JITTER_MS, abortOn = IllegalStateException.class)
     public String generateContent(final String prompt) {
         LOG.debug("Generating content with OpenAI for prompt length: {}", prompt != null ? prompt.length() : 0);
 

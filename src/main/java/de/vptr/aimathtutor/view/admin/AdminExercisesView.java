@@ -104,11 +104,11 @@ public class AdminExercisesView extends AbstractAdminView {
         }
 
         this.buildUi();
-        this.loadLessonsAsync();
-        this.loadExercisesAsync();
+        this.loadLessons();
+        this.loadExercises();
     }
 
-    private void loadExercisesAsync() {
+    private void loadExercises() {
         LOG.info("Loading exercises");
         try {
             final var exercises = this.exerciseService.getAllExercises();
@@ -120,7 +120,7 @@ public class AdminExercisesView extends AbstractAdminView {
         }
     }
 
-    private void loadPublishedExercisesAsync() {
+    private void loadPublishedExercises() {
         LOG.info("Loading published exercises");
         try {
             final var exercises = this.exerciseService.findPublishedExercises();
@@ -132,7 +132,7 @@ public class AdminExercisesView extends AbstractAdminView {
         }
     }
 
-    private void loadLessonsAsync() {
+    private void loadLessons() {
         LOG.info("Loading lessons");
         try {
             this.availableLessons = this.lessonService.getAllLessons();
@@ -167,7 +167,7 @@ public class AdminExercisesView extends AbstractAdminView {
         final var searchLayout = new SearchLayout(
                 e -> {
                     if (e.getValue() == null || e.getValue().isBlank()) {
-                        this.loadExercisesAsync();
+                        this.loadExercises();
                     }
                 },
                 ignored -> this.searchExercise(),
@@ -177,7 +177,7 @@ public class AdminExercisesView extends AbstractAdminView {
         this.searchButton = searchLayout.getButton();
         this.searchField = searchLayout.getTextfield();
 
-        this.showPublishedButton = new Button("Show Published Only", ignored -> this.loadPublishedExercisesAsync());
+        this.showPublishedButton = new Button("Show Published Only", ignored -> this.loadPublishedExercises());
         this.showPublishedButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
 
         // Date range filter
@@ -206,7 +206,7 @@ public class AdminExercisesView extends AbstractAdminView {
         layout.setSpacing(true);
 
         final var createButton = new CreateButton(ignored -> this.openExerciseDialog(null));
-        final var refreshButton = new RefreshButton(ignored -> this.loadExercisesAsync());
+        final var refreshButton = new RefreshButton(ignored -> this.loadExercises());
 
         layout.add(createButton, refreshButton);
         return layout;
@@ -526,8 +526,8 @@ public class AdminExercisesView extends AbstractAdminView {
 
             this.exerciseDialog.close();
             // Refresh exercises and lessons so computed columns (exercise counts) update
-            this.loadExercisesAsync();
-            this.loadLessonsAsync();
+            this.loadExercises();
+            this.loadLessons();
 
         } catch (final ValidationException e) {
             NotificationUtil.showError("Please check the form for errors");
@@ -546,8 +546,8 @@ public class AdminExercisesView extends AbstractAdminView {
         try {
             if (this.exerciseService.deleteExercise(exercise.id)) {
                 NotificationUtil.showSuccess("Exercise deleted successfully");
-                this.loadExercisesAsync();
-                this.loadLessonsAsync();
+                this.loadExercises();
+                this.loadLessons();
             } else {
                 NotificationUtil.showError("Failed to delete exercise");
             }

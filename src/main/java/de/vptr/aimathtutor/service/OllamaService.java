@@ -3,11 +3,13 @@ package de.vptr.aimathtutor.service;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.vptr.aimathtutor.dto.OllamaRequestDto;
 import de.vptr.aimathtutor.dto.OllamaResponseDto;
+import de.vptr.aimathtutor.util.AppConstants;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -78,6 +80,7 @@ public class OllamaService {
      * @param prompt The input prompt
      * @return The generated text response
      */
+    @Retry(maxRetries = AppConstants.RETRY_MAX_RETRIES, delay = AppConstants.RETRY_DELAY_MS, jitter = AppConstants.RETRY_JITTER_MS, abortOn = IllegalStateException.class)
     public String generateContent(final String prompt) {
         LOG.debug("Generating content with Ollama for prompt length: {}", prompt != null ? prompt.length() : 0);
 
