@@ -1,27 +1,25 @@
 # Full Code Review & Remediation Plan
 
-## Summary of Findings
+## Recommended Implementation Order
 
-| Severity | Count |
-| -------- | ----- |
-| CRITICAL | 7     |
-| HIGH     | 14    |
-| MEDIUM   | 21    |
-| LOW      | 15+   |
+1. **Phase 1:** Critical security issues — do first, can be done in parallel by different developers
+2. **Phase 2:** High-priority bugs — start with H4 (UI thread safety) and H5 (auth annotations) as they affect all users
+3. **Phase 3:** Code duplication and quality — tackle M1–M6 (extraction/refactoring) as a dedicated refactoring sprint
+4. **Phase 4:** Test coverage — parallel with Phase 3, focus on AI service mocks first
+5. **Phase 5:** Polish Part 1 — batch test coverage
+6. **Phase 6:** Polish Part 2 — batch ci low-priority items
 
 ---
 
 ## Phase 1: Critical Security Fixes (Immediate)
 
-| #   | Issue                                                                                                                    | Location                                                               | Action                                                                    |
-| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| S1  | **Invalid bcrypt dummy hash** breaks timing-attack mitigation                                                            | `UserIdentityProvider.java:77`                                         | Replace with valid 60-char bcrypt hash                                    |
-| S2  | **Password shown in cleartext** (TextField instead of PasswordField)                                                     | `AdminUsersView.java:240,347`                                          | Change to `PasswordField`                                                 |
-| S3  | **No session fixation protection** — session ID not regenerated on login                                                 | `AuthService.java:109-113`                                             | Invalidate old HTTP session, create new one after auth                    |
-| S4  | **Comment XSS sanitizer** uses naive regex `<[^>]*>`                                                                     | `CommentService.java:297-302`                                          | Replace with OWASP HTML Sanitizer or rely on Vaadin auto-escaping         |
-| S5  | **User impersonation in `createComment`** — caller can set arbitrary `comment.user`                                      | `CommentService.java:164-201`                                          | Always derive user from `currentUsername`, never trust entity input       |
-| S6  | **Missing error notifications** in async AI feedback handlers — user sees nothing on failure                             | `MathWorkspaceView.java:396-401`, `ExerciseWorkspaceView.java:553-558` | Add `Notification.show()` in `exceptionally` handlers                     |
-| S7  | **NOT NULL constraint mismatch** — `AiConfigEntity.config_type`/`category` declared NOT NULL but `init.sql` allows nulls | `AiConfigEntity.java:54,60` vs `init.sql:358`                          | Add NOT NULL to SQL or remove `nullable = false` from entity (align both) |
+| #   | Issue                                                                                        | Location                                                               | Action                                                              |
+| --- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| S1  | **Invalid bcrypt dummy hash** breaks timing-attack mitigation                                | `UserIdentityProvider.java:77`                                         | Replace with valid 60-char bcrypt hash                              |
+| S2  | **No session fixation protection** — session ID not regenerated on login                     | `AuthService.java:109-113`                                             | Invalidate old HTTP session, create new one after auth              |
+| S3  | **Comment XSS sanitizer** uses naive regex `<[^>]*>`                                         | `CommentService.java:297-302`                                          | Replace with OWASP HTML Sanitizer or rely on Vaadin auto-escaping   |
+| S4  | **User impersonation in `createComment`** — caller can set arbitrary `comment.user`          | `CommentService.java:164-201`                                          | Always derive user from `currentUsername`, never trust entity input |
+| S5  | **Missing error notifications** in async AI feedback handlers — user sees nothing on failure | `MathWorkspaceView.java:396-401`, `ExerciseWorkspaceView.java:553-558` | Add `Notification.show()` in `exceptionally` handlers               |
 
 ## Phase 2: High-Priority Bugs & Architectural Issues
 
@@ -100,17 +98,5 @@
 | L13 | `OPENAI_ORG_ID` default empty string sends header always                                   | Default to null, conditionally include header                             |
 | L14 | `OllamaService.httpClient` not closed on `@PreDestroy`                                     | Add cleanup method                                                        |
 | L15 | `CommentService.createComment(entity,String)` doesn't fire CDI event for real-time updates | Fire `commentCreatedEvent`                                                |
-
----
-
-## Recommended Implementation Order
-
-1. **Phase 1 (S1–S9):** Critical security issues — do first, can be done in parallel by different developers
-2. **Phase 2 (H1–H16):** High-priority bugs — start with H4 (UI thread safety) and H5 (auth annotations) as they affect all users
-3. **Phase 3 (M1–M21):** Code duplication and quality — tackle M1–M6 (extraction/refactoring) as a dedicated refactoring sprint
-4. **Phase 4 (T1–T8):** Test coverage — parallel with Phase 3, focus on AI service mocks first
-5. **Phase 5 (L1–L20):** Polish — batch low-priority items
-
-Would you like me to start implementing any of these phases, or would you like to adjust priorities?
 
 ---
