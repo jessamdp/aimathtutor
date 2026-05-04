@@ -26,8 +26,6 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.VaadinSession;
-
 import de.vptr.aimathtutor.component.button.DeleteButton;
 import de.vptr.aimathtutor.component.button.EditButton;
 import de.vptr.aimathtutor.component.button.HideButton;
@@ -370,9 +368,8 @@ public class AdminCommentsView extends AbstractAdminView {
                 commentEntity.exercise = exerciseEntity;
             }
 
-            // Get current username from session
-            final var session = VaadinSession.getCurrent();
-            final var currentUsername = (String) session.getAttribute("authenticated.username");
+            // Get current username from auth service
+            final var currentUsername = this.authService.getUsername();
 
             if (this.currentComment.id == null) {
                 if (currentUsername == null) {

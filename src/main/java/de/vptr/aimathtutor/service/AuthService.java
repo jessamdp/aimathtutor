@@ -62,7 +62,7 @@ public class AuthService {
             final long remaining = this.loginAttemptService.getRemainingLockoutSeconds(usernameKey);
             LOG.warn("Authentication throttled for user: {} ({}s remaining)", username, remaining);
             return AuthResultDto
-                    .backendUnavailable("Too many failed attempts. Please try again in " + remaining + " seconds.");
+                    .backendUnavailable("Too many failed attempts. Try again later.");
         }
 
         try {

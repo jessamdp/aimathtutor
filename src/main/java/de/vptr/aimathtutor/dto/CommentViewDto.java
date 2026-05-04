@@ -56,13 +56,17 @@ public class CommentViewDto {
     }
 
     /**
-     * Convert this ViewDto to a CommentDto for create/update operations
+     * Convert this ViewDto to a CommentDto for create/update operations.
+     * Note: {@code status} is intentionally omitted because moderation state is
+     * managed separately and is not part of the mutation DTO.
      */
     public CommentDto toCommentDto() {
         final CommentDto dto = new CommentDto();
         dto.id = this.id;
         dto.content = this.content;
         dto.exerciseId = this.exerciseId;
+        dto.parentCommentId = this.parentId;
+        dto.sessionId = this.sessionId;
         return dto;
     }
 }

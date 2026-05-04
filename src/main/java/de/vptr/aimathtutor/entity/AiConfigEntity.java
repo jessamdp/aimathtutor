@@ -31,9 +31,7 @@ import jakarta.validation.constraints.NotBlank;
  * without requiring application restart.
  */
 @Entity
-@Table(name = "ai_config", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "config_key")
-})
+@Table(name = "ai_config")
 @NamedQueries({
         @NamedQuery(name = "AiConfig.findByKey", query = "FROM AiConfigEntity WHERE configKey = :key"),
         @NamedQuery(name = "AiConfig.findByCategory", query = "FROM AiConfigEntity WHERE category = :category ORDER BY configKey"),

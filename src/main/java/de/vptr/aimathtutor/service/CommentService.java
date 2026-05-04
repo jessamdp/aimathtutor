@@ -199,6 +199,14 @@ public class CommentService {
 
         comment.content = this.sanitizeCommentContent(comment.content);
         this.commentRepository.persist(comment);
+
+        // Fire CDI event for real-time updates
+        if (comment.user != null) {
+            this.commentCreatedEvent.fire(new CommentCreatedEvent(
+                    comment.id, comment.exercise.id, comment.user.id, comment.user.username,
+                    comment.content, comment.created));
+        }
+
         return new CommentViewDto(comment);
     }
 

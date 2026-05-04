@@ -67,7 +67,7 @@ public class CommentEntity extends PanacheEntityBase {
     @Version
     public Long version;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     @NotBlank
     public String content;
 
