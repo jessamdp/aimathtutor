@@ -74,17 +74,19 @@ public class ErrorMessageUtil {
     }
 
     private static String extractMessageWithRegex(final String responseBody) {
-        if (responseBody.contains("\"message\"")) {
-            int messageStart = responseBody.indexOf("\"message\"");
-            if (messageStart != -1) {
-                messageStart = responseBody.indexOf(":", messageStart) + 1;
-                final int messageEnd = responseBody.indexOf("\"", messageStart + 1);
-                if (messageEnd != -1) {
-                    final String message = responseBody.substring(messageStart + 1, messageEnd);
-                    return message.trim();
-                }
-            }
+        if (!responseBody.contains("\"message\"")) {
+            return null;
         }
-        return null;
+        var messageStart = responseBody.indexOf("\"message\"");
+        if (messageStart == -1) {
+            return null;
+        }
+        messageStart = responseBody.indexOf(":", messageStart) + 1;
+        final var messageEnd = responseBody.indexOf("\"", messageStart + 1);
+        if (messageEnd == -1) {
+            return null;
+        }
+        final var message = responseBody.substring(messageStart + 1, messageEnd);
+        return message.trim();
     }
 }
