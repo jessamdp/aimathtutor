@@ -310,4 +310,26 @@ Clickable spans are used extensively across views, especially admin views, howev
 
 > **Consistency check:** When fixing, check all views (admin and student) for identical clickable-span patterns and fix them consistently.
 
+### 6.3 OWASP Dependency-Check & Secret Scanning
+
+**Issue:** The CI pipeline (`.github/workflows/ci-cd.yml`) is missing OWASP dependency-check and secret scanning steps. Both are currently commented out.
+
+**Why implement:** OWASP dependency-check is a documented Code Quality Gate (`failBuildOnCVSS=7`). Running it in CI prevents known-vulnerable dependencies from reaching `main`. Gitleaks secret scanning prevents accidental credential commits.
+
+**Action:**
+
+1. Add the `NVD_API_KEY` as a GitHub repository secret.
+2. Uncomment the OWASP dependency-check and Gitleaks steps in the `security` job.
+3. Make the OWASP step conditional or fail-soft if `NVD_API_KEY` is absent, so PRs from forks don't break.
+
+---
+
+### 6.4 — Maven Cache in Security Job
+
+**Issue:** The `security` CI job compiles the project (`./mvnw clean install package -DskipTests`) without caching Maven dependencies, while the `build` job already has `actions/cache@v4`.
+
+**Why implement:** Zero-risk improvement. Caching dependencies cuts CI time by minutes on every run.
+
+**Action:** Add the same `actions/cache@v4` block (path `~/.m2/repository`, key `${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}`) to the `security` job before the compile step.
+
 ---

@@ -103,12 +103,6 @@
             <artifactId>quarkus-rest-client-jackson</artifactId>
         </dependency>
 
-        <!-- Security dependencies -->
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-security</artifactId>
-        </dependency>
-
         <!-- Health checks via MicroProfile Health / SmallRye -->
         <dependency>
             <groupId>io.quarkus</groupId>
